@@ -1,4 +1,4 @@
-"""beeep URL Configuration
+"""flemmer URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/2.0/topics/http/urls/
@@ -15,9 +15,15 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from main import views
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('', include('main.urls')),
-    path('auth/', include('useraccounts.urls'))
+    path('', views.index, name='index'),
+    path('post_court_rep_form/', views.post_court_rep_form, name='post_court_rep_form'),
+    path('get_all_users/', views.get_all_users, name='get_all_users'),
+    path('get_all_forms/', views.get_all_forms, name='get_all_forms'),
+    path('post_credentials_form/', views.post_credentials_form, name='post_credentials_form')
 ]
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
