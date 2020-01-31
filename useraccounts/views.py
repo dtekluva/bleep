@@ -9,6 +9,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.core import serializers
 from django.shortcuts import get_object_or_404
 import json
+from helpers.http_codes import http_codes
 # from snippet import helpers
 import ast
 
@@ -111,33 +112,51 @@ def mobile_signin(request):
         if request.method == 'POST':
 
                 data     = json.loads(request.body)
-                email    = data["email"]
+                phone    = data["email"]
                 password = data["password"]
 
                 try:
-                        user_account = UserAccount.objects.get(email = email)
+                        user_account = UserAccount.objects.get(username = username)
                 except:
-                        resp = HttpResponse(json.dumps({"response": "authentication failure","content": {"user":email, "message":""}, "auth_keys": {"access_token": ""}}))
-                        resp = CORS.allow_all(resp)
-                        return resp
+                        resp = HttpResponse(json.dumps({"response": {
+                            "code": http_codes["Unauthorized"],
+                            "task_successful": False,
+                            "content": {
+                                "user": "",
+                                "message": f"Authentication credentials mismatch"
+                            },
+                            "auth_keys": {"access_token": ""}
+                        }
+                        }))
+
+                        return CORS(resp).allow_all()
 
                 auth_successful = user_account.authenticate(user_account.username, password, request)
                 print(auth_successful)
 
                 if auth_successful:                      
 
-                        resp = HttpResponse(json.dumps({"response": "success","content": {"user":user_account.email, "message":""}, "auth_keys": {"access_token": user_account.token}}))
-                        resp = CORS.allow_all(resp)
-                        return resp
+                        resp = HttpResponse(json.dumps({"response": {
+                            "code": http_codes["ok"],
+                            "task_successful": True,
+                            "content": {
+                                "user": user.firstname,
+                                "message": f"created and authenticated new user - ({civilian.firstname})"
+                            },
+                            "auth_keys": {"access_token": civilian.get_token()}
+                        }
+                        }))
+                        return CORS(resp).allow_all()
+
                 else:
                         resp = HttpResponse(json.dumps({"response": "authentication failure","content": {"user":user_account.email, "message":""}, "auth_keys": {"access_token": ""}}))
-                        resp = CORS.allow_all(resp)
-                        return resp
+
+                        return CORS(resp).allow_all()
 
         else:
                 resp = HttpResponse(json.dumps({"response": "bad request method","content": {"user":"", "message":""}, "auth_keys": {"access_token": ""}}))
-                resp = CORS.allow_all(resp)
-                return resp
+
+                return CORS(resp).allow_all()
 
 @csrf_exempt
 def mobile_register_civilian(request):
@@ -150,23 +169,83 @@ def mobile_register_civilian(request):
                 phone = data["phone"]
                 password = data["password"]
                 
-                try:    
-                        Civilian.objects.get(phone = phone)
+                
 
-                        resp = HttpResponse(json.dumps({"response": "creation failed","content": {"user":firstname, "message":"email address may already exist"}, "auth_keys": {"access_token": "NULL"}}))
-                        resp = CORS.allow_all(resp)
-                        return resp
-                except:
+                if Civilian.objects.filter(phone = phone).exists() or User.objects.filter(username = phone).exists():
+
+                        resp = (json.dumps({"response": {"task_successful": False, "content": {
+                                        "code": http_codes["Precondition Failed"], "user": first_name, "message": "phone number may already exist"}, "auth_keys": {"access_token": "NULL"}}}))
+                        
+                        return CORS(resp).allow_all()
+                        
+                else:
+                        
                         civilian = Civilian().create(firstname= first_name, lastname= last_name, phone= phone, password= password)
 
                         civilian.authenticate(civilian.user.username, password, request)
 
-                        resp = HttpResponse(json.dumps({"response": "success","content": {"user":civilian.firstname, "message":f"created and authenticated new user - ({civilian.firstname})"}, "auth_keys": {"access_token": civilian.token}}))
-                        resp = CORS.allow_all(resp)
-                        return resp
+                        resp = (json.dumps({"response": {
+                            "code": http_codes["Created"],
+                            "task_successful": True,
+                            "content": {
+                                "user": civilian.firstname,
+                                "message": f"created and authenticated new user - ({civilian.firstname})"
+                            },
+                            "auth_keys": {"access_token": civilian.get_token()}
+                        }
+                        })
+                                        )
+
+                        return CORS(resp).allow_all()
 
 
         else:
-                resp = HttpResponse(json.dumps({"response": "bad request method","content": {"user": "", "message":""}, "auth_keys": {"access_token": ""}}))
-                resp = CORS.allow_all(resp)
-                return resp
+                resp = (json.dumps({"response": {"task_successful": False, "code": http_codes["Method Not Allowed"], "content": {
+                                    "user": "", "message": "bad request method"}, "auth_keys": {"access_token": ""}}}))
+
+                return CORS(resp).allow_all()
+
+
+@csrf_exempt
+def mobile_register_lawyer(request):
+
+        if request.method == 'POST':
+
+                data = json.loads(request.body)
+                first_name = data["firstname"]
+                last_name = data["lastname"]
+                phone = data["phone"]
+                password = data["password"]                
+
+                if Lawyer.objects.filter(phone = phone).exists() or User.objects.filter(username = phone).exists():
+
+                        resp = (json.dumps({"response": {"task_successful": False, "content": {
+                                        "code": http_codes["Precondition Failed"], "user": first_name, "message": "phone number may already exist"}, "auth_keys": {"access_token": "NULL"}}}))
+
+                        return CORS(resp).allow_all()    
+                        
+                else:
+                        
+                        lawyer = Lawyer().create(firstname= first_name, lastname= last_name, phone= phone, password= password)
+
+                        lawyer.authenticate(lawyer.user.username, password, request)
+
+                        resp = (json.dumps({"response": {
+                            "code": http_codes["Created"],
+                            "task_successful": True,
+                            "content": {
+                                "user": lawyer.firstname,
+                                "message": f"created and authenticated new user - ({lawyer.firstname})"
+                            },
+                            "auth_keys": {"access_token": lawyer.get_token()}
+                        }
+                        })
+                                        )
+
+                        return CORS(resp).allow_all()                    
+
+        else:
+                resp = (json.dumps({"response": {"task_successful": False, "code": http_codes["Method Not Allowed"],                            "content": {
+                                        "user": "", "message": "bad request method"}, "auth_keys": {"access_token": ""}}}))
+
+                return CORS(resp).allow_all()
