@@ -252,23 +252,31 @@ def mobile_register_lawyer(request):
 @csrf_exempt
 def mobile_verify_code(request):
         print(request.META)
-        if request.method == 'POST':
-
-                data  = json.loads(request.body)
-                phone = data["phone"]
-                code  = data["code"]  
-
-        user = User.objects.get(username = phone)
-        is_verified = Verifier(user).verify_code(code)
-
-        accounts = Lawyer.objects.filter(user = user) or Civilian.objects.filter(user = user)
-
-        target_account = accounts[0]
-        target_account.is_verified = True
-        target_account.save()
-        print(target_account, target_account.is_verified)
-
         
-        resp = (json.dumps({"response": {"task_successful": is_verified, "code": http_codes["Accepted"],                            "content": {
-                                        "user": "", "message": "User account activated"}, "auth_keys": {"access_token": target_account.get_token()}}}))
-        return CORS(resp).allow_all()
+        if request.method == 'POST':
+                if request.method == 'POST':
+
+                        data  = json.loads(request.body)
+                        phone = data["phone"]
+                        code  = data["code"]  
+
+                user = User.objects.get(username = phone)
+                is_verified = Verifier(user).verify_code(code)
+
+                accounts = Lawyer.objects.filter(user = user) or Civilian.objects.filter(user = user)
+
+                target_account = accounts[0]
+                target_account.is_verified = True
+                target_account.save()
+                print(target_account, target_account.is_verified)
+
+                
+                resp = (json.dumps({"response": {"task_successful": is_verified, "code": http_codes["Accepted"],                            "content": {
+                                                "user": "", "message": "User account activated"}, "auth_keys": {"access_token": target_account.get_token()}}}))
+                return CORS(resp).allow_all()
+
+        else:
+                resp = (json.dumps({"response": {"task_successful": False, "code": http_codes["Method Not Allowed"],                            "content": {
+                                        "user": "", "message": "bad request method"}, "auth_keys": {"access_token": ""}}}))
+
+                return CORS(resp).allow_all()
