@@ -1,17 +1,16 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseRedirect
 from django.contrib.auth.models import User
-# from useraccounts.models import UserAccount, Token_man, Session
 from main.models import *
 from main import views
 from django.contrib.auth import authenticate, login, logout
 from django.views.decorators.csrf import csrf_exempt
 from django.core import serializers
 from django.shortcuts import get_object_or_404
-import json
+import json, ast
 from helpers.http_codes import http_codes
+from helpers.verification import Verifier
 # from snippet import helpers
-import ast
 
 from django.shortcuts import render
 
@@ -249,3 +248,27 @@ def mobile_register_lawyer(request):
                                         "user": "", "message": "bad request method"}, "auth_keys": {"access_token": ""}}}))
 
                 return CORS(resp).allow_all()
+
+@csrf_exempt
+def mobile_verify_code(request):
+        print(request.META)
+        if request.method == 'POST':
+
+                data  = json.loads(request.body)
+                phone = data["phone"]
+                code  = data["code"]  
+
+        user = User.objects.get(username = phone)
+        is_verified = Verifier(user).verify_code(code)
+
+        accounts = Lawyer.objects.filter(user = user) or Civilian.objects.filter(user = user)
+
+        target_account = accounts[0]
+        target_account.is_verified = True
+        target_account.save()
+        print(target_account, target_account.is_verified)
+
+        
+        resp = (json.dumps({"response": {"task_successful": is_verified, "code": http_codes["Accepted"],                            "content": {
+                                        "user": "", "message": "User account activated"}, "auth_keys": {"access_token": target_account.get_token()}}}))
+        return CORS(resp).allow_all()

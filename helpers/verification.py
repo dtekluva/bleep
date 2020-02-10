@@ -58,3 +58,7 @@ class Verifier:
         data = self.read_data().get(self.user.username, [])
 
         return data
+
+    def verify_code(self, code):
+
+        return self.get_code()['code'] == code

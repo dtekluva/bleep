@@ -36,7 +36,7 @@ class Lawyer(models.Model):
     phone          = models.CharField( max_length = 150, blank = True, null = True)
     longitude      = models.FloatField(blank = True, null = True)
     latitude       = models.FloatField(blank = True, null = True)
-    is_verified       = models.BooleanField(default = False)
+    is_verified    = models.BooleanField(default = False)
     token          = models.CharField(max_length=200, null=True, blank = True)
     
     def authenticate(self, username, password, request):
@@ -47,44 +47,18 @@ class Lawyer(models.Model):
 
                 user = User.objects.get(id=user.id)
                 login(request, user)
-                self.add_token()
+                self.add_token(user)
 
                 return True
 
         else: return False
-
-    def add_token(self):
-        Token_man(self).add_token()
-
-    def verify_token(self, token):
-        if self.token == token:
-            return True
-        else:
-            return False
 
     def __str__(self):
         return self.user.username
 
-    def __str__(self):
-        return self.firstname
-
-    def authenticate(self, username, password, request):
-        user = authenticate(username = username.lower(), password = password)
-
-        if user and (user.username == username): #allows user to login using username
-                # No backend authenticated the credentials
-
-                user = User.objects.get(id=user.id)
-                login(request, user)
-                self.add_token()
-
-                return True
-
-        else: return False
-    
     def get_token(self):
         if self.is_verified:
-            return self.token
+            return self.user.token_set.all()[0].token
         else:
             return {"token":False, "message": "User Not Yet Verified"}
 
@@ -138,8 +112,7 @@ class Civilian(models.Model):
     phone          = models.CharField( max_length = 150, blank = True, null = True)
     longitude      = models.FloatField(blank = True, null = True)
     latitude       = models.FloatField(blank = True, null = True)
-    is_verified       = models.BooleanField(default = False)
-    token          = models.CharField(max_length=200, null=True, blank = True)
+    is_verified    = models.BooleanField(default = False)
     
     def authenticate(self, username, password, request):
         user = authenticate(username = username.lower(), password = password)
@@ -149,30 +122,18 @@ class Civilian(models.Model):
 
                 user = User.objects.get(id=user.id)
                 login(request, user)
-                self.add_token()
+                self.add_token(user)
 
                 return True
 
         else: return False
 
-    def add_token(self):
-        Token_man(self).add_token()
-
-    def verify_token(self, token):
-        if self.token == token:
-            return True
-        else:
-            return False
-
     def __str__(self):
         return self.user.username
 
-    def __str__(self):
-        return self.firstname
-
     def get_token(self):
         if self.is_verified:
-            return self.token
+            return self.user.token_set.all()[0].token
         else:
             return {"token":False, "message": "User Not Yet Verified"}
 
@@ -185,17 +146,39 @@ class Civilian(models.Model):
 
         return civilian
 
-#USER ACTUALLY REFERS TO USERACCOUNT MODEL OR OBJECT JUST USED USER FOR BETTER UNDERSTANDING 
-class Token_man():
-    
-    def __init__(self, user):
-        self.user = user
+
+class Token(models.Model):
+
+    device_id = models.CharField(max_length=200, null=True, blank = True)
+    token     = models.CharField(max_length=200, null=True, blank = True)
+    user      = models.ForeignKey(User, on_delete= models.CASCADE)
+    is_active = models.BooleanField(default = False)
         
     def generate_token(self):
         return secrets.token_urlsafe(40)
 
-    def add_token(self):
-        self.user.token = self.generate_token()
-        self.user.save()
+    def save(self, *args, **kwargs):
 
+        if kwargs.get("is_new"):
+            self.token = self.generate_token()
 
+        super(Token, self).save()
+
+    def deactivate(self):
+        self.is_active = False
+        self.save()
+
+    def activate(self):
+        self.is_active = True
+        self.save()
+
+    @staticmethod
+    def add_token(user):
+        Token(user = self.user).save()
+
+    def verify_token(self, token):
+        if self.token_set.filter(token = token).exists():
+            return True
+        else:
+            return False
+    
