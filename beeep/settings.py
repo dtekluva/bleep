@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 
 import os
 import socket
-from google.oauth2 import service_account
+# from google.oauth2 import service_account
 
 try:
     HOSTNAME = socket.gethostname()
