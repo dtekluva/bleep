@@ -99,6 +99,9 @@ class Buddy(models.Model):
     def __str__(self):
         return self.firstname
 
+    class Meta:
+        verbose_name_plural = "Buddies"
+
 class Civilian(models.Model):
     user           = models.OneToOneField(User, on_delete=models.CASCADE)
     lawyer         = models.ManyToManyField(Lawyer, blank = True, null = True)
