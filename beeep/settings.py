@@ -11,11 +11,22 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 """
 
 import os
+import socket
+from google.oauth2 import service_account
+
+try:
+    HOSTNAME = socket.gethostname()
+except:
+    HOSTNAME = 'localhost'
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TEMPLATE_DIR = os.path.join(BASE_DIR, 'templates')
 STATIC_DIR = os.path.join(BASE_DIR, 'static')
+
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/auth/login'
+LOGIN_URL = '/auth/login'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
@@ -33,16 +44,16 @@ ALLOWED_HOSTS = [
                 ]
 
 
-try:
-    HOSTNAME = socket.gethostname()
-except:
-    HOSTNAME = 'localhost'
+# try:
+#     HOSTNAME = socket.gethostname()
+# except:
+#     HOSTNAME = 'localhost'
 
 
 
-LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/auth/login'
-LOGIN_URL = '/auth/login'
+# LOGIN_REDIRECT_URL = '/'
+# LOGOUT_REDIRECT_URL = '/auth/login'
+# LOGIN_URL = '/auth/login'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
@@ -71,6 +82,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 ROOT_URLCONF = 'beeep.urls'
@@ -78,7 +90,7 @@ ROOT_URLCONF = 'beeep.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [TEMPLATE_DIR],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -143,3 +155,9 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 CORS_ORIGIN_ALLOW_ALL = True
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFileStorage'
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
