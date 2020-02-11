@@ -104,7 +104,7 @@ class Buddy(models.Model):
 
 class Civilian(models.Model):
     user           = models.OneToOneField(User, on_delete=models.CASCADE)
-    lawyer         = models.ManyToManyField(Lawyer, blank = True, null = True)
+    lawyer         = models.ManyToManyField(Lawyer, blank = True)
     plan           = models.ForeignKey(Plan, on_delete=models.CASCADE, blank = True, null = True)
     buddy          = models.ForeignKey(Buddy, on_delete=models.CASCADE, blank = True, null = True)
     firstname      = models.CharField( max_length = 30)
