@@ -39,9 +39,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = [
                 "localhost" ,
-                "64.227.55.3",
-                "167.172.58.95",
-                "159.89.45.252"        
+                "beeep.pythonanywhere.com"      
                 ]
 
 
@@ -157,7 +155,7 @@ USE_TZ = True
 STATIC_URL = '/static/'
 CORS_ORIGIN_ALLOW_ALL = True
 
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATICILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFileStorage'
 
 MEDIA_URL = '/media/'

@@ -1,6 +1,10 @@
+import sys
 from django.db import models
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
+from PIL import Image
+from io import BytesIO
+from django.core.files.uploadedfile import InMemoryUploadedFile
 
 import secrets
 from cors.models import *
@@ -38,20 +42,23 @@ class Lawyer(models.Model):
     latitude       = models.FloatField(blank = True, null = True)
     is_verified    = models.BooleanField(default = False)
     token          = models.CharField(max_length=200, null=True, blank = True)
-    
-    def authenticate(self, username, password, request):
-        user = authenticate(username = username.lower(), password = password)
+    image          =  models.ImageField(upload_to = 'profile_pics/',blank=False,null=True)
 
-        if user and (user.username == username): #allows user to login using username
-                # No backend authenticated the credentials
+    def save_image(self, *args, **kwargs):
 
-                user = User.objects.get(id=user.id)
-                login(request, user)
-                self.add_token(user)
+        self.uploadedImage = self.compressImage(self.uploadedImage)
+        super(Lawyer, self).save(*args, **kwargs)
+        
+    def compressImage(self,uploadedImage):
 
-                return True
+        imageTemporary = Image.open(uploadedImage)
+        outputIoStream = BytesIO()
+        imageTemporaryResized = imageTemporary.resize( (1020,573) ) 
+        imageTemporary.save(outputIoStream , format='JPEG', quality=60)
+        outputIoStream.seek(0)
+        uploadedImage = InMemoryUploadedFile(outputIoStream, 'ImageField', "%s.jpg" % uploadedImage.name.split('.')[0], 'image/jpeg', sys.getsizeof(outputIoStream), None)
 
-        else: return False
+        return uploadedImage
 
     def __str__(self):
         return self.user.username
@@ -116,23 +123,23 @@ class Civilian(models.Model):
     longitude      = models.FloatField(blank = True, null = True)
     latitude       = models.FloatField(blank = True, null = True)
     is_verified    = models.BooleanField(default = False)
-    
-    def authenticate(self, username, password, request):
-        user = authenticate(username = username.lower(), password = password)
+    image          =  models.ImageField(upload_to = 'profile_pics/',blank=False,null=True)
 
-        if user and (user.username == username): #allows user to login using username
-                # No backend authenticated the credentials
+    def save_image(self, *args, **kwargs):
 
-                user = User.objects.get(id=user.id)
-                login(request, user)
-                self.add_token(user)
+        self.uploadedImage = self.compressImage(self.uploadedImage)
+        super(Civilian, self).save(*args, **kwargs)
+        
+    def compressImage(self,uploadedImage):
 
-                return True
+        imageTemporary = Image.open(uploadedImage)
+        outputIoStream = BytesIO()
+        imageTemporaryResized = imageTemporary.resize( (1020,573) ) 
+        imageTemporary.save(outputIoStream , format='JPEG', quality=60)
+        outputIoStream.seek(0)
+        uploadedImage = InMemoryUploadedFile(outputIoStream, 'ImageField', "%s.jpg" % uploadedImage.name.split('.')[0], 'image/jpeg', sys.getsizeof(outputIoStream), None)
 
-        else: return False
-
-    def __str__(self):
-        return self.user.username
+        return uploadedImage
 
     def get_token(self):
         if self.is_verified:
@@ -152,11 +159,15 @@ class Civilian(models.Model):
 
 class Token(models.Model):
 
-    device_id = models.CharField(max_length=200, null=True, blank = True)
+    device_id = models.CharField(max_length=200, null=True, blank = True) #mac address preferably
+    username  = models.CharField(max_length=200, null=True, blank = True)
+    device_name = models.CharField(max_length=200, null=True, blank = True)
+    user_agent  = models.CharField(max_length=200, null=True, blank = True)
     token     = models.CharField(max_length=200, null=True, blank = True)
     user      = models.ForeignKey(User, on_delete= models.CASCADE)
     is_active = models.BooleanField(default = False)
-        
+    icon      = models.ImageField(upload_to = 'token_icons/',blank=False,null=True)
+
     def generate_token(self):
         return secrets.token_urlsafe(40)
 
@@ -177,11 +188,26 @@ class Token(models.Model):
 
     @staticmethod
     def add_token(user):
-        Token(user = self.user).save()
+        Token(user = user.user).save()
 
+    
     def verify_token(self, token):
         if self.token_set.filter(token = token).exists():
             return True
         else:
             return False
-    
+
+    @staticmethod
+    def authenticate(self, username, password, request):
+        user = authenticate(username = username.lower(), password = password)
+
+        if user and (user.username == username): #allows user to login using username
+                # No backend authenticated the credentials
+
+                user = User.objects.get(id=user.id)
+                login(request, user)
+                self.add_token(user)
+
+                return True
+
+        else: return False
