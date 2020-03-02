@@ -136,7 +136,7 @@ def mobile_signin(request):
                 if auth_successful:                      
 
                         resp = HttpResponse(json.dumps({"response": {
-                            "code": http_codes["ok"],
+                            "code": http_codes["OK"],
                             "task_successful": True,
                             "content": {
                                 "user": user.firstname,
@@ -165,6 +165,7 @@ def mobile_register_civilian(request):
                 data = json.loads(request.body)
                 first_name = data["firstname"]
                 last_name = data["lastname"]
+                email = data["email"]
                 phone = data["phone"]
                 password = data["password"]
                 
@@ -179,9 +180,9 @@ def mobile_register_civilian(request):
                         
                 else:
                         
-                        civilian = Civilian().create(firstname= first_name, lastname= last_name, phone= phone, password= password)
+                        civilian = Civilian().create(firstname= first_name, lastname= last_name, phone= phone, password= password, email = email)
 
-                        civilian.authenticate(civilian.user.username, password, request)
+                        Token().authenticate(civilian, civilian.user.username, password, request)
 
                         resp = (json.dumps({"response": {
                             "code": http_codes["Created"],
@@ -280,3 +281,12 @@ def mobile_verify_code(request):
                                         "user": "", "message": "bad request method"}, "auth_keys": {"access_token": ""}}}))
 
                 return CORS(resp).allow_all()
+
+def get_verification_code(request, phone):
+
+        user = User.objects.get(username = phone)
+        verification_code = Verifier(user).get_code()
+
+        resp = (json.dumps({"response": {"task_successful": True, "code": http_codes["OK"],                            "content": {
+                                                "verification_code": verification_code, "message": ""}, "auth_keys": {"access_token": []}}}))
+        return CORS(resp).allow_all()
