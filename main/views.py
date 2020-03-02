@@ -173,6 +173,7 @@ def get_all_forms(request):
             resp =  HttpResponse(json.dumps({"response": "failure", "message": f"Bad request(endpoint expects post), or Unable to fetch (invalid access token)"}))
             resp = CORS.allow_all(resp)
             return resp
+            
     except:
         resp = HttpResponse(json.dumps({"response": "failure", "message": f"Bad request(endpoint expects post), or Unable to fetch (invalid access token)"}))
         resp = CORS.allow_all(resp)

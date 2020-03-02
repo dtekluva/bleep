@@ -188,7 +188,7 @@ class Token(models.Model):
 
     @staticmethod
     def add_token(user):
-        Token(user = user.user).save()
+        Token(user = user).save("is_new")
 
     
     def verify_token(self, token):
