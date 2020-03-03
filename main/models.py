@@ -68,7 +68,7 @@ class Lawyer(models.Model):
 
     def get_token(self):
         if self.is_verified:
-            return self.user.token_set.all()[0].token
+            return self.user.token_set.all().order_by("-id")[0].token
         else:
             return {"token":False, "message": "User Not Yet Verified"}
 
@@ -146,7 +146,7 @@ class Civilian(models.Model):
 
     def get_token(self):
         if self.is_verified:
-            return self.user.token_set.all()[0].token
+            return self.user.token_set.all().order_by("-id")[0].token
         else:
             return {"token":False, "message": "User Not Yet Verified"}
 
@@ -190,8 +190,9 @@ class Token(models.Model):
         self.save()
 
     def add_token(self, request = False):
-        self.device_name = request.META.get("COMPUTERNAME", "")
-        self.user_agent = request.META.get("HTTP_USER_AGENT", "")
+        if request:
+            self.device_name = request.META.get("COMPUTERNAME", "")
+            self.user_agent = request.META.get("HTTP_USER_AGENT", "")
         self.is_active = True
         self.save(is_new = True)
     
@@ -210,7 +211,7 @@ class Token(models.Model):
 
                 user = User.objects.get(id=user.id)
                 login(request, user)
-                Token(user = user).add_token()
+                Token(user = user).add_token(request)
 
                 return True
 

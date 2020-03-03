@@ -14,6 +14,7 @@ urlpatterns = [
     path('mobile_register_civilian', views.mobile_register_civilian, name='mobile_register_civilian'),
     path('mobile_register_lawyer', views.mobile_register_lawyer, name='mobile_register_lawyer'),
     path('mobile_verify_code', views.mobile_verify_code, name='mobile_verify_code'),
+    path('mobile_signin', views.mobile_signin, name='mobile_signin'),
     path('get_verification_code/<str:phone>', views.get_verification_code, name='get_verification_code'),
     path('login_as/<int:phone>', views.login_as_view, name='login_as'),
     path('logout', auth_views.LogoutView.as_view(template_name="/login.html"), name='logout'),

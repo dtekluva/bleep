@@ -110,12 +110,49 @@ def mobile_signin(request):
         if request.method == 'POST':
 
                 data     = json.loads(request.body)
-                phone    = data["email"]
+                phone    = data["phone"]
                 password = data["password"]
 
                 try:
-                        user_account = UserAccount.objects.get(username = username)
-                except:
+                        auth_successful = Token.authenticate(phone, password,request)
+                        user = Civilian.objects.filter(user__username = phone) or Lawyer.objects.filter(user__username = phone)
+
+                        if auth_successful:
+                                user_data = user[0].__dict__
+                                user_data["_state"] = ""
+
+                                resp = (json.dumps({"response": {
+                                                                "code": http_codes["Created"],
+                                                                "task_successful": True,
+                                                                "content": {
+                                                                        "message": f"Authenticated new user",
+                                                                        "user_type": user[0].__class__.__name__,
+                                                                        "details": user_data
+                                                                },
+                                                                "auth_keys": {"access_token": user[0].get_token()
+                                                                }
+                                                                }
+                                                                })
+                                                                                )
+                        
+                                return CORS(resp).allow_all()
+                        
+                        else:
+
+                                resp = (json.dumps({"response": {
+                                                                "code": http_codes["Unauthorized"],
+                                                                "task_successful": False,
+                                                                "content": {
+                                                                        "message": "Username or Password might be wrong..!!"
+                                                                },
+                                                                "auth_keys": {"access_token": ""}
+                                                                }
+                                                                })
+                                                                                )
+                        
+                                return CORS(resp).allow_all()
+
+                except SyntaxError :
                         resp = HttpResponse(json.dumps({"response": {
                             "code": http_codes["Unauthorized"],
                             "task_successful": False,
@@ -129,32 +166,13 @@ def mobile_signin(request):
 
                         return CORS(resp).allow_all()
 
-                auth_successful = user_account.authenticate(user_account.username, password, request)
-                print(auth_successful)
-
-                if auth_successful:                      
-
-                        resp = HttpResponse(json.dumps({"response": {
-                            "code": http_codes["OK"],
-                            "task_successful": True,
-                            "content": {
-                                "user": user.firstname,
-                                "message": f"created and authenticated new user - ({civilian.firstname})"
-                            },
-                            "auth_keys": {"access_token": civilian.get_token()}
-                        }
-                        }))
-                        return CORS(resp).allow_all()
-
-                else:
-                        resp = HttpResponse(json.dumps({"response": "authentication failure","content": {"user":user_account.email, "message":""}, "auth_keys": {"access_token": ""}}))
-
-                        return CORS(resp).allow_all()
-
         else:
-                resp = HttpResponse(json.dumps({"response": "bad request method","content": {"user":"", "message":""}, "auth_keys": {"access_token": ""}}))
+                resp = (json.dumps({"response": {"task_successful": False, "code": http_codes["Method Not Allowed"],                    "content": {
+                                    "user": "", "message": "bad request method"}, "auth_keys": {"access_token": ""}}}))
 
                 return CORS(resp).allow_all()
+
+
 
 @csrf_exempt
 def mobile_register_civilian(request):
@@ -167,8 +185,6 @@ def mobile_register_civilian(request):
                 email = data["email"]
                 phone = data["phone"]
                 password = data["password"]
-                
-                
 
                 if Civilian.objects.filter(phone = phone).exists() or User.objects.filter(username = phone).exists():
 
