@@ -9,7 +9,6 @@ from django.core import serializers
 from django.shortcuts import get_object_or_404
 import json, ast
 from helpers.http_codes import http_codes
-from helpers.verification import Verifier
 # from snippet import helpers
 
 from django.shortcuts import render
@@ -22,7 +21,7 @@ def login_view(request):
 
                 if True:
 
-                        email    = request.POST.get("email", "")
+                        email    = request.POST.get("email", "") 
                         username = request.POST.get("username", "").lower()
                         email = email.lower()
                         password    = request.POST.get("password", "")
@@ -182,8 +181,6 @@ def mobile_register_civilian(request):
                         
                         civilian = Civilian().create(firstname= first_name, lastname= last_name, phone= phone, password= password, email = email)
 
-                        Token().authenticate(civilian, civilian.user.username, password, request)
-
                         resp = (json.dumps({"response": {
                             "code": http_codes["Created"],
                             "task_successful": True,
@@ -214,21 +211,22 @@ def mobile_register_lawyer(request):
                 data = json.loads(request.body)
                 first_name = data["firstname"]
                 last_name = data["lastname"]
+                email = data["email"]
                 phone = data["phone"]
-                password = data["password"]                
+                password = data["password"]
+                
+                
 
                 if Lawyer.objects.filter(phone = phone).exists() or User.objects.filter(username = phone).exists():
 
                         resp = (json.dumps({"response": {"task_successful": False, "content": {
                                         "code": http_codes["Precondition Failed"], "user": first_name, "message": "phone number may already exist"}, "auth_keys": {"access_token": "NULL"}}}))
-
-                        return CORS(resp).allow_all()    
+                        
+                        return CORS(resp).allow_all()
                         
                 else:
                         
-                        lawyer = Lawyer().create(firstname= first_name, lastname= last_name, phone= phone, password= password)
-
-                        lawyer.authenticate(lawyer.user.username, password, request)
+                        lawyer = Lawyer().create(firstname= first_name, lastname= last_name, phone= phone, password= password, email = email)
 
                         resp = (json.dumps({"response": {
                             "code": http_codes["Created"],
@@ -242,17 +240,20 @@ def mobile_register_lawyer(request):
                         })
                                         )
 
-                        return CORS(resp).allow_all()                    
+                        return CORS(resp).allow_all()
+
 
         else:
-                resp = (json.dumps({"response": {"task_successful": False, "code": http_codes["Method Not Allowed"],                            "content": {
-                                        "user": "", "message": "bad request method"}, "auth_keys": {"access_token": ""}}}))
+                resp = (json.dumps({"response": {"task_successful": False, "code": http_codes["Method Not Allowed"], "content": {
+                                    "user": "", "message": "bad request method"}, "auth_keys": {"access_token": ""}}}))
 
                 return CORS(resp).allow_all()
 
 @csrf_exempt
 def mobile_verify_code(request):
-        print(request.META)
+        # print(request.META.get("COMPUTERNAME", ""))
+        # print(request.META.get("HTTP_USER_AGENT", ""))
+        # print(request.META)
         
         if request.method == 'POST':
                 
@@ -261,7 +262,6 @@ def mobile_verify_code(request):
                         data  = json.loads(request.body)
                         phone = data["phone"]
                         code  = data["code"]
-                        print(data)
 
                 except KeyError:
                         resp = (json.dumps({"response": {"task_successful": False, "code": http_codes["Bad Request"],                            "content": {
@@ -271,23 +271,34 @@ def mobile_verify_code(request):
                 try:
 
 
-                        user = User.objects.get(username = phone)
-                        is_verified = Verifier(user).verify_code(code)
+                        users = User.objects.filter(username = phone)
+
+                        try:
+                                if users: user = users[0] 
+                                else: raise Exception("Phone number does not exist error ")
+
+                        except Exception:
+
+                                resp = (json.dumps({"response": {"task_successful": False, "code": http_codes["Not Implemented"],                            "content": {
+                                                                "user": "", "message": "Account details provided do not exist."}, "auth_keys": {"access_token": []}}}))
+                                return CORS(resp).allow_all()
+
+                        is_verified = Activation_Code_Manager(user).verify_code(code)
 
                         accounts = Lawyer.objects.filter(user = user) or Civilian.objects.filter(user = user)
 
                         target_account = accounts[0]
                         target_account.is_verified = True
-                        Token().add_token(target_account.user)
+                        Token(user = target_account.user).add_token(request)
                         target_account.save()
                         
                         resp = (json.dumps({"response": {"task_successful": is_verified, "code": http_codes["Accepted"],                            "content": {
                                                         "user": "", "message": "User account activated"}, "auth_keys": {"access_token": target_account.get_token()}}}))
                         return CORS(resp).allow_all()
                         
-                except:
+                except SyntaxError:
                         resp = (json.dumps({"response": {"task_successful": False, "code": http_codes["Not Implemented"],                            "content": {
-                                                        "user": "", "message": "User account not activated( somethong went wrong"}, "auth_keys": {"access_token": target_account.get_token()}}}))
+                                                        "user": "", "message": "User account not activated( something went wrong"}, "auth_keys": {"access_token": []}}}))
                         return CORS(resp).allow_all()
 
         else:
@@ -298,9 +309,17 @@ def mobile_verify_code(request):
 
 def get_verification_code(request, phone):
 
-        user = User.objects.get(username = phone)
-        verification_code = Verifier(user).get_code()
+        try:
 
-        resp = (json.dumps({"response": {"task_successful": True, "code": http_codes["OK"],                            "content": {
-                                                "verification_code": verification_code, "message": ""}, "auth_keys": {"access_token": []}}}))
-        return CORS(resp).allow_all()
+                user = User.objects.get(username = phone)
+                verification_code = Activation_Code_Manager(user).get_code()
+
+                resp = (json.dumps({"response": {"task_successful": True, "code": http_codes["OK"],                            "content": {
+                                                        "verification_code": verification_code, "message": ""}, "auth_keys": {"access_token": []}}}))
+                return CORS(resp).allow_all()
+
+        except:
+
+                resp = (json.dumps({"response": {"task_successful": True, "code": http_codes["Not Found"],                            "content": {
+                                                        "verification_code": "no code", "message": "Requested user resource not found"}, "auth_keys": {"access_token": []}}}))
+                return CORS(resp).allow_all()
