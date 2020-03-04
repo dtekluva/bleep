@@ -275,5 +275,6 @@ class Activation_Code_Manager:
         return data
 
     def verify_code(self, code):
+        print(self.get_code()['code'] , code)
 
         return self.get_code()['code'] == code

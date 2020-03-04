@@ -301,18 +301,25 @@ def mobile_verify_code(request):
 
                         is_verified = Activation_Code_Manager(user).verify_code(code)
 
-                        accounts = Lawyer.objects.filter(user = user) or Civilian.objects.filter(user = user)
+                        if is_verified:
 
-                        target_account = accounts[0]
-                        target_account.is_verified = True
-                        Token(user = target_account.user).add_token(request)
-                        target_account.save()
-                        
-                        resp = (json.dumps({"response": {"task_successful": is_verified, "code": http_codes["Accepted"],                            "content": {
-                                                        "user": "", "message": "User account activated"}, "auth_keys": {"access_token": target_account.get_token()}}}))
-                        return CORS(resp).allow_all()
-                        
-                except SyntaxError:
+                                accounts = Lawyer.objects.filter(user = user) or Civilian.objects.filter(user = user)
+
+                                target_account = accounts[0]
+                                target_account.is_verified = True
+                                Token(user = target_account.user).add_token(request)
+                                target_account.save()
+                                
+                                resp = (json.dumps({"response": {"task_successful": is_verified, "code": http_codes["Accepted"],                            "content": {
+                                                                "user": "", "message": "User account activated"}, "auth_keys": {"access_token": target_account.get_token()}}}))
+                                return CORS(resp).allow_all()
+                        else:
+                                resp = (json.dumps({"response": {"task_successful": False, "code": http_codes["Not Implemented"],                            "content": {
+                                                                "user": "", "message": "Account details provided do not exist."}, "auth_keys": {"access_token": []}}}))
+                                return CORS(resp).allow_all()
+
+                                
+                except :
                         resp = (json.dumps({"response": {"task_successful": False, "code": http_codes["Not Implemented"],                            "content": {
                                                         "user": "", "message": "User account not activated( something went wrong"}, "auth_keys": {"access_token": []}}}))
                         return CORS(resp).allow_all()
