@@ -154,6 +154,8 @@ class Civilian(models.Model):
 
         user = User.objects.create(username = phone, first_name = firstname, last_name = lastname, email = email)
         user.set_password(password)
+        user.save(0)
+        print(password)
 
         civilian = Civilian.objects.create(user = user, firstname = firstname, lastname = lastname, twitter_handle = twitter_handle, email = email, address = address, phone = phone )
 
@@ -204,16 +206,21 @@ class Token(models.Model):
 
     @staticmethod
     def authenticate(username, password, request):
-        user = authenticate(username = username.lower(), password = password)
+        # user_logged = User.objects.get(username = username)
+        user_model = Civilian.objects.filter(user__username = username) or Lawyer.objects.filter(user__username = username)
+        user = authenticate(username = username , password = password)
+        print(user, username, username.lower())
 
         if user and (user.username == username): #allows user to login using username
                 # No backend authenticated the credentials
 
-                user = User.objects.get(id=user.id)
-                login(request, user)
-                Token(user = user).add_token(request)
+                if user_model[0].is_verified:
 
-                return True
+                    user = User.objects.get(id=user.id)
+                    login(request, user)
+                    Token(user = user).add_token(request)
+
+                    return True
 
         else: return False
 

@@ -116,25 +116,30 @@ def mobile_signin(request):
                 try:
                         auth_successful = Token.authenticate(phone, password,request)
                         user = Civilian.objects.filter(user__username = phone) or Lawyer.objects.filter(user__username = phone)
+                        main_user = Civilian.objects.filter(user__username = phone) or Lawyer.objects.filter(user__username = phone)
 
                         if auth_successful:
+
                                 user_data = user[0].__dict__
-                                user_data["_state"] = ""
+                                if user_data["_state"] :
+                                        del user_data["_state"]
+
+                                print(user_data)
 
                                 resp = (json.dumps({"response": {
                                                                 "code": http_codes["Created"],
                                                                 "task_successful": True,
                                                                 "content": {
                                                                         "message": f"Authenticated new user",
-                                                                        "user_type": user[0].__class__.__name__,
+                                                                        "user_type": main_user.__class__.__name__,
                                                                         "details": user_data
                                                                 },
-                                                                "auth_keys": {"access_token": user[0].get_token()
+                                                                "auth_keys": {"access_token": main_user[0].get_token()
                                                                 }
                                                                 }
                                                                 })
-                                                                                )
-                        
+                                                                )
+
                                 return CORS(resp).allow_all()
                         
                         else:
