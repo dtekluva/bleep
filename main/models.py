@@ -179,8 +179,10 @@ class Token(models.Model):
     def save(self, *args, **kwargs):
 
         if kwargs.get("is_new"):
-            self.token = self.generate_token()
 
+            token_exists = True
+            self.token = self.generate_token()
+        
         super(Token, self).save()
 
     def deactivate(self):
@@ -198,8 +200,16 @@ class Token(models.Model):
         self.is_active = True
         self.save(is_new = True)
     
-    def verify_token(self, token):
-        if self.token_set.filter(token = token).exists():
+    @staticmethod
+    def verify_token(request):
+        data     = json.loads(request.body)
+        user_id  = data.get("credentials").get("phone")
+        user = User.objects.get(username = user_id)
+        token = request.META.get("HTTP_AUTHORIZATION")
+
+        token_exists = user.token_set.filter(token = token).exists()
+
+        if token_exists:
             return True
         else:
             return False

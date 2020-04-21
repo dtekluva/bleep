@@ -134,13 +134,13 @@ def mobile_signin(request):
                                                                         "user_type": main_user.__class__.__name__,
                                                                         "details": user_data
                                                                 },
-                                                                "auth_keys": {"access_token": main_user[0].get_token()
+                                                                "auth_keys": {"access_token": "in-headers"
                                                                 }
                                                                 }
                                                                 })
                                                                 )
 
-                                return CORS(resp).allow_all()
+                                return CORS(resp).allow_all(auth = main_user[0].get_token(), status_code=201)
                         
                         else:
 
@@ -155,7 +155,7 @@ def mobile_signin(request):
                                                                 })
                                                                                 )
                         
-                                return CORS(resp).allow_all()
+                                return CORS(resp).allow_all(status_code=401)
 
                 except SyntaxError :
                         resp = HttpResponse(json.dumps({"response": {
@@ -169,13 +169,13 @@ def mobile_signin(request):
                         }
                         }))
 
-                        return CORS(resp).allow_all()
+                        return CORS(resp).allow_all(status_code=http_codes["Unauthorized"]["code"])
 
         else:
                 resp = (json.dumps({"response": {"task_successful": False, "code": http_codes["Method Not Allowed"],                    "content": {
                                     "user": "", "message": "bad request method"}, "auth_keys": {"access_token": ""}}}))
 
-                return CORS(resp).allow_all()
+                return CORS(resp).allow_all(status_code=http_codes["Method Not Allowed"]["code"])
 
 
 
@@ -196,7 +196,7 @@ def mobile_register_civilian(request):
                         resp = (json.dumps({"response": {"task_successful": False, "content": {
                                         "code": http_codes["Precondition Failed"], "user": first_name, "message": "phone number may already exist"}, "auth_keys": {"access_token": "NULL"}}}))
                         
-                        return CORS(resp).allow_all()
+                        return CORS(resp).allow_all(status_code=http_codes["Precondition Failed"]["code"])
                         
                 else:
                         
@@ -214,14 +214,14 @@ def mobile_register_civilian(request):
                         })
                                         )
 
-                        return CORS(resp).allow_all()
+                        return CORS(resp).allow_all(status_code=http_codes["Created"]["code"])
 
 
         else:
                 resp = (json.dumps({"response": {"task_successful": False, "code": http_codes["Method Not Allowed"], "content": {
                                     "user": "", "message": "bad request method"}, "auth_keys": {"access_token": ""}}}))
 
-                return CORS(resp).allow_all()
+                return CORS(resp).allow_all(status_code=http_codes["Method Not Allowed"]["code"])
 
 
 @csrf_exempt
@@ -243,7 +243,7 @@ def mobile_register_lawyer(request):
                         resp = (json.dumps({"response": {"task_successful": False, "content": {
                                         "code": http_codes["Precondition Failed"], "user": first_name, "message": "phone number may already exist"}, "auth_keys": {"access_token": "NULL"}}}))
                         
-                        return CORS(resp).allow_all()
+                        return CORS(resp).allow_all(status_code=http_codes["Precondition Failed"]["code"])
                         
                 else:
                         
@@ -261,14 +261,14 @@ def mobile_register_lawyer(request):
                         })
                                         )
 
-                        return CORS(resp).allow_all()
+                        return CORS(resp).allow_all(status_code=http_codes["Created"]["code"])
 
 
         else:
                 resp = (json.dumps({"response": {"task_successful": False, "code": http_codes["Method Not Allowed"], "content": {
                                     "user": "", "message": "bad request method"}, "auth_keys": {"access_token": ""}}}))
 
-                return CORS(resp).allow_all()
+                return CORS(resp).allow_all(status_code=http_codes["Method Not Allowed"]["code"])
 
 @csrf_exempt
 def mobile_verify_code(request):
@@ -287,7 +287,7 @@ def mobile_verify_code(request):
                 except KeyError:
                         resp = (json.dumps({"response": {"task_successful": False, "code": http_codes["Bad Request"],                            "content": {
                                                         "user": "", "message": "User account not activated (Bad parameters sent"}, "auth_keys": {"access_token": []}}}))
-                        return CORS(resp).allow_all()    
+                        return CORS(resp).allow_all(status_code=http_codes["Bad Request"]["code"])    
 
                 try:
 
@@ -302,7 +302,7 @@ def mobile_verify_code(request):
 
                                 resp = (json.dumps({"response": {"task_successful": False, "code": http_codes["Not Implemented"],                            "content": {
                                                                 "user": "", "message": "Account details provided do not exist."}, "auth_keys": {"access_token": []}}}))
-                                return CORS(resp).allow_all()
+                                return CORS(resp).allow_all(status_code=http_codes["Not Implemented"])
 
                         is_verified = Activation_Code_Manager(user).verify_code(code)
 
@@ -317,23 +317,23 @@ def mobile_verify_code(request):
                                 
                                 resp = (json.dumps({"response": {"task_successful": is_verified, "code": http_codes["Accepted"],                            "content": {
                                                                 "user": "", "message": "User account activated"}, "auth_keys": {"access_token": target_account.get_token()}}}))
-                                return CORS(resp).allow_all()
+                                return CORS(resp).allow_all(auth=target_account.get_token(), status_code=http_codes["Accepted"])
                         else:
                                 resp = (json.dumps({"response": {"task_successful": False, "code": http_codes["Not Implemented"],                            "content": {
                                                                 "user": "", "message": "Account details provided do not exist."}, "auth_keys": {"access_token": []}}}))
-                                return CORS(resp).allow_all()
+                                return CORS(resp).allow_all(status_code=http_codes["Not Implemented"]["code"])
 
                                 
                 except :
                         resp = (json.dumps({"response": {"task_successful": False, "code": http_codes["Not Implemented"],                            "content": {
                                                         "user": "", "message": "User account not activated( something went wrong"}, "auth_keys": {"access_token": []}}}))
-                        return CORS(resp).allow_all()
+                        return CORS(resp).allow_all(status_code=http_codes["Not Implemented"]["code"])
 
         else:
                 resp = (json.dumps({"response": {"task_successful": False, "code": http_codes["Method Not Allowed"],                            "content": {
                                         "user": "", "message": "bad request method"}, "auth_keys": {"access_token": ""}}}))
 
-                return CORS(resp).allow_all()
+                return CORS(resp).allow_all(status_code=http_codes["Method Not Allowed"]["code"])
 
 def get_verification_code(request, phone):
 
@@ -350,4 +350,4 @@ def get_verification_code(request, phone):
 
                 resp = (json.dumps({"response": {"task_successful": True, "code": http_codes["Not Found"],                            "content": {
                                                         "verification_code": "no code", "message": "Requested user resource not found"}, "auth_keys": {"access_token": []}}}))
-                return CORS(resp).allow_all()
+                return CORS(resp).allow_all(http_codes["Not Found"]["code"])

@@ -21,7 +21,7 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('', views.index, name='index'),
-    path('post_court_rep_form/', views.post_court_rep_form, name='post_court_rep_form'),
+    path('update_details', views.update_details, name='update_details'),
     path('get_all_users/', views.get_all_users, name='get_all_users'),
     path('get_all_forms/', views.get_all_forms, name='get_all_forms'),
     path('post_credentials_form/', views.post_credentials_form, name='post_credentials_form')

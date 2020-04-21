@@ -1,8 +1,10 @@
-from django.shortcuts import render
-from main.models import *
 from django.http import HttpResponse, HttpResponseRedirect
 from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import get_object_or_404
+from helpers.http_codes import http_codes
+from django.shortcuts import render
 from useraccounts.models import *
+from main.models import *
 from cors.models import *
 import json
 
@@ -10,6 +12,79 @@ import json
 
 def index(request):
     return HttpResponse(json.dumps({"response": "success", "message": "Sorry no content here. Maybe download the app."}))
+
+@csrf_exempt
+def update_details(request):
+
+        if request.method == 'POST':
+
+                data     = json.loads(request.body)
+                phone    = data.get("phone")
+                password = data.get("password")
+                firstname      = data.get("first_name")
+                lastname       = data.get("last_name")
+                twitter_handle = data.get("twitter_handle")
+                address        = data.get("address")
+                email          = data.get("email")
+                phone          = data.get("phone")
+
+                try:
+                        auth_successful = Token.verify_token(request)
+                        user = Civilian.objects.filter(user__username = phone) or Lawyer.objects.filter(user__username = phone)
+                        main_user = Civilian.objects.filter(user__username = phone) or Lawyer.objects.filter(user__username = phone)
+
+                        if auth_successful:
+
+                                resp = (json.dumps({"response": {
+                                                                "code": http_codes["Created"],
+                                                                "task_successful": True,
+                                                                "content": {
+                                                                            "message": f"Authenticated new user",
+                                                                            "user_type": "main_user.__class__.__name__",
+                                                                            "details": "user_data"
+                                                                        },
+                                                                "auth_keys": {"access_token": main_user[0].get_token()
+                                                                }
+                                                                }
+                                                                })
+                                                                )
+
+                                return CORS(resp).allow_all(auth=main_user[0].get_token(), status_code=201)
+                        
+                        else:
+
+                                resp = (json.dumps({"response": {
+                                                                "code": http_codes["Unauthorized"],
+                                                                "task_successful": False,
+                                                                "content": {
+                                                                        "message": "Username or Password might be wrong..!!"
+                                                                },
+                                                                "auth_keys": {"access_token": ""}
+                                                                }
+                                                                })
+                                                                                )
+                        
+                                return CORS(resp).allow_all(status_code=401)
+
+                except SyntaxError :
+                        resp = HttpResponse(json.dumps({"response": {
+                            "code": http_codes["Unauthorized"],
+                            "task_successful": False,
+                            "content": {
+                                "user": "",
+                                "message": f"Authentication credentials mismatch"
+                            },
+                            "auth_keys": {"access_token": ""}
+                        }
+                        }))
+
+                        return CORS(resp).allow_all(status_code=401)
+
+        else:
+                resp = (json.dumps({"response": {"task_successful": False, "code": http_codes["Method Not Allowed"],                    "content": {
+                                    "user": "", "message": "bad request method"}, "auth_keys": {"access_token": ""}}}))
+
+                return CORS(resp).allow_all(status_code=405)
 
 @csrf_exempt
 def post_court_rep_form(request):
