@@ -81,7 +81,7 @@ class Lawyer(models.Model):
         distances = solve_distances(lawyer_frame, [user.longitude, user.latitude])
         lawyer_frame["distance"] = distances
 
-        return lawyer_frame.to_dict(orient="index")
+        return lawyer_frame.sort_values('distance').to_dict(orient="index")
 
         
     def compressImage(self,uploadedImage):
