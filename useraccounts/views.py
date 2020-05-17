@@ -9,11 +9,8 @@ from django.core import serializers
 from django.shortcuts import get_object_or_404
 import json, ast
 from helpers.http_codes import http_codes
-# from snippet import helpers
-
 from django.shortcuts import render
-
-
+# from snippet import helpers
 
 def login_view(request):
 
@@ -65,8 +62,6 @@ def login_as_view(request, id):
         else:
                 return HttpResponse(json.dumps({"response":"failure"}))    
 
-
-
 def update_password(request):
 
         user = User.objects.get(pk = request.user.id)
@@ -102,7 +97,6 @@ def update_password(request):
                                 return HttpResponse(json.dumps({"response": "success"}))
                         else:
                                 return HttpResponse(json.dumps({"response": "failure"}))
-
  
 @csrf_exempt
 def mobile_signin(request):
@@ -177,8 +171,6 @@ def mobile_signin(request):
 
                 return CORS(resp).allow_all(status_code=http_codes["Method Not Allowed"]["code"])
 
-
-
 @csrf_exempt
 def mobile_register_civilian(request):
 
@@ -222,7 +214,6 @@ def mobile_register_civilian(request):
                                     "user": "", "message": "bad request method"}, "auth_keys": {"access_token": ""}}}))
 
                 return CORS(resp).allow_all(status_code=http_codes["Method Not Allowed"]["code"])
-
 
 @csrf_exempt
 def mobile_register_lawyer(request):
@@ -302,7 +293,7 @@ def mobile_verify_code(request):
 
                                 resp = (json.dumps({"response": {"task_successful": False, "code": http_codes["Not Implemented"],                            "content": {
                                                                 "user": "", "message": "Account details provided do not exist."}, "auth_keys": {"access_token": []}}}))
-                                return CORS(resp).allow_all(status_code=http_codes["Not Implemented"])
+                                return CORS(resp).allow_all(status_code=http_codes["Not Implemented"]["code"])
 
                         is_verified = Activation_Code_Manager(user).verify_code(code)
 
@@ -317,7 +308,7 @@ def mobile_verify_code(request):
                                 
                                 resp = (json.dumps({"response": {"task_successful": is_verified, "code": http_codes["Accepted"],                            "content": {
                                                                 "user": "", "message": "User account activated"}, "auth_keys": {"access_token": target_account.get_token()}}}))
-                                return CORS(resp).allow_all(auth=target_account.get_token(), status_code=http_codes["Accepted"])
+                                return CORS(resp).allow_all(auth=target_account.get_token(), status_code=http_codes["Accepted"]["code"])
                         else:
                                 resp = (json.dumps({"response": {"task_successful": False, "code": http_codes["Not Implemented"],                            "content": {
                                                                 "user": "", "message": "Account details provided do not exist."}, "auth_keys": {"access_token": []}}}))
@@ -335,6 +326,7 @@ def mobile_verify_code(request):
 
                 return CORS(resp).allow_all(status_code=http_codes["Method Not Allowed"]["code"])
 
+@csrf_exempt
 def get_verification_code(request, phone):
 
         try:

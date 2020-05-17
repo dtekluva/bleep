@@ -6,7 +6,10 @@ from PIL import Image
 from io import BytesIO
 from django.core.files.uploadedfile import InMemoryUploadedFile
 import json, datetime, random
+import pandas as pd
 from beeep.settings import BASE_DIR
+from scipy.spatial import distance
+
 # from dateutil import parser
 
 import secrets
@@ -14,11 +17,25 @@ from cors.models import *
 
 # Create your models here.
 class Plan(models.Model):
+
+    CHOICES     = [
+        ('civilian', 'civilian'),
+        ('lawyer', 'lawyer'),
+    ]
+
     name           = models.CharField(max_length = 30)
-    num_of_buddies = models.IntegerField()
-    num_of_lawyers = models.IntegerField()
-    num_of_devices = models.IntegerField()
-    price          = models.IntegerField()
+    num_of_buddies = models.IntegerField(default=0)
+    num_of_lawyers = models.IntegerField(default=0)
+    num_of_devices = models.IntegerField(default=0)
+    price          = models.IntegerField(default=0)
+    type_of_user    = models.CharField(max_length = 30, choices = CHOICES, default = "civilian" )
+
+    @staticmethod
+    def get_all_plans():
+
+        civillian_plans = Plan.objects.all().values("name", "num_of_buddies", "num_of_devices", "price", "type_of_user", "id")
+
+        return list(civillian_plans)
 
     def __str__(self):
         return self.name
@@ -26,11 +43,13 @@ class Plan(models.Model):
 class Subscription(models.Model):
     user       = models.OneToOneField(User, on_delete=models.CASCADE)
     plan       = models.ForeignKey(Plan, on_delete=models.CASCADE)
+    plan_price = models.IntegerField(default=0)
     sub_date   = models.DateField()
     duration   = models.DateField()
     expiration = models.DateField()
 
-        # return self.plan
+    def __str__(self):
+        return self.user.firstname
 
 class Lawyer(models.Model):
     user           = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -51,6 +70,19 @@ class Lawyer(models.Model):
 
         self.uploadedImage = self.compressImage(self.uploadedImage)
         super(Lawyer, self).save(*args, **kwargs)
+
+    @staticmethod
+    def get_closest(user):
+
+        lawyers = Lawyer.objects.all().values("longitude", "latitude", "firstname", "lastname", "phone")
+
+        lawyer_frame = pd.DataFrame(list(lawyers))
+
+        distances = solve_distances(lawyer_frame, [user.longitude, user.latitude])
+        lawyer_frame["distance"] = distances
+
+        return lawyer_frame.to_dict(orient="index")
+
         
     def compressImage(self,uploadedImage):
 
@@ -75,6 +107,7 @@ class Lawyer(models.Model):
     def __str__(self):
         return self.firstname
 
+
     def create(self, username = "null", firstname = "null", lastname = "null", twitter_handle = "", email = "null@null.com", password = "00000000", address = "none supplied", phone = "0" ):
 
         user = User.objects.create(username = phone, first_name = firstname, last_name = lastname, email = email)
@@ -85,6 +118,12 @@ class Lawyer(models.Model):
         lawyer = Lawyer.objects.create(user = user, firstname = firstname, lastname = lastname, twitter_handle = twitter_handle, email = email, address = address )
 
         return lawyer
+
+    def add_location(self, geolocation):
+
+        self.longitude = geolocation["longitude"]
+        self.latitude = geolocation["latitude"]
+        self.save()
 
 class Buddy(models.Model):
     CHOICES     = [
@@ -103,8 +142,9 @@ class Buddy(models.Model):
     ]
     firstname    = models.CharField(max_length = 30)
     lastname     = models.CharField(max_length = 30)
-    phonenumber  = models.IntegerField()
+    phonenumber  = models.CharField(max_length = 30)
     relationship = models.CharField(max_length = 30, choices = CHOICES )
+    user          = models.ForeignKey(User, on_delete=models.CASCADE, blank = True, null = True)
 
     def __str__(self):
         return self.firstname
@@ -116,7 +156,7 @@ class Civilian(models.Model):
     user           = models.OneToOneField(User, on_delete=models.CASCADE)
     lawyer         = models.ManyToManyField(Lawyer, blank = True)
     plan           = models.ForeignKey(Plan, on_delete=models.CASCADE, blank = True, null = True)
-    buddy          = models.ForeignKey(Buddy, on_delete=models.CASCADE, blank = True, null = True)
+    # buddy          = models.ForeignKey(Buddy, on_delete=models.CASCADE, blank = True, null = True)
     firstname      = models.CharField( max_length = 30)
     lastname       = models.CharField( max_length = 30)
     twitter_handle = models.CharField( max_length = 150, blank = True, null = True)
@@ -132,6 +172,88 @@ class Civilian(models.Model):
 
         self.uploadedImage = self.compressImage(self.uploadedImage)
         super(Civilian, self).save(*args, **kwargs)
+
+    def get_buddies(self):
+        buddies = self.user.buddy_set.all().values("lastname", "firstname", "phonenumber", "relationship", "id", )
+
+        return list(buddies)
+
+    def update_details(self, data):
+        
+        response = {"status":True, "message":""}
+        phone = data.get("phone")
+        if phone:
+            self.phone = phone
+            self.user.username = phone
+            self.user.save()
+
+        password = data.get("password")
+        if password:
+            self.user.set_password(password)
+            self.user.save()
+            
+        firstname = data.get("firstname")
+        if firstname:
+            self.firstname = firstname
+
+        lastname = data.get("lastname")
+        if lastname:
+            self.lastname = lastname
+
+        twitter_handle = data.get("twitter_handle")
+        if twitter_handle:
+            self.twitter_handle = twitter_handle
+
+        address = data.get("address")
+        if address:
+            self.address = address
+        email = data.get("email")
+
+        if email:
+            self.email = email
+
+        plan_id = data.get("plan")
+        if plan_id:
+            plan = Plan.objects.filter(id = plan_id)
+
+            if plan and plan[0].type_of_user == "civilian":
+                self.plan = plan[0]
+                self.save()
+            else:
+                response["status"] = False
+                return response
+        
+        self.save()
+
+        return response
+
+    def add_buddy(self, data):
+
+        # allowed_buddies = self.plan.num_of_buddies
+        firstname = data.get("firstname", "")
+        lastname = data.get("lastname", "")
+        phone =   data.get("phone", "")
+        relationship = data.get("relationship", "")
+
+        new_buddy = Buddy(firstname = firstname, lastname = lastname, phonenumber = phone, relationship = relationship, user = self.user)
+
+        new_buddy.save()
+
+        return True
+
+    def get_details(self):
+        user_data = self.__dict__
+        data = {}
+
+        for key in user_data:
+            if key.startswith("_"):
+                continue
+                
+            data[key] = user_data[key]
+        
+        data["buddies"] = self.get_buddies()
+
+        return data
         
     def compressImage(self,uploadedImage):
 
@@ -160,6 +282,14 @@ class Civilian(models.Model):
         civilian = Civilian.objects.create(user = user, firstname = firstname, lastname = lastname, twitter_handle = twitter_handle, email = email, address = address, phone = phone )
 
         return civilian
+
+    def add_location(self, geolocation):
+
+        self.longitude = geolocation["longitude"]
+        self.latitude = geolocation["latitude"]
+        self.save()
+
+        return True
 
 
 class Token(models.Model):
@@ -195,6 +325,17 @@ class Token(models.Model):
 
     def add_token(self, request = False):
         if request:
+            current_tokens = self.user.token_set.all()
+
+            civilian_or_lawyer = Civilian.objects.filter(user = self.user) or Lawyer.objects.filter(user = self.user)
+
+            try:
+                if not (civilian_or_lawyer[0].plan.num_of_devices > current_tokens.count()):## CHECK HOW MANY DEVICES, THE USER'S PLAN ALLOWS HIM TO HAVE
+                    current_tokens[0].delete()
+
+            except AttributeError:
+                pass
+
             self.device_name = request.META.get("COMPUTERNAME", "")
             self.user_agent = request.META.get("HTTP_USER_AGENT", "")
         self.is_active = True
@@ -202,15 +343,20 @@ class Token(models.Model):
     
     @staticmethod
     def verify_token(request):
-        data     = json.loads(request.body)
-        user_id  = data.get("credentials").get("phone")
-        user = User.objects.get(username = user_id)
-        token = request.META.get("HTTP_AUTHORIZATION")
 
+        user_id  = request.META.get("HTTP_PHONE")
+
+        try:
+            user = User.objects.get(username = user_id)
+        except:
+            return False
+
+        token = request.META.get("HTTP_AUTHORIZATION")
+        
         token_exists = user.token_set.filter(token = token).exists()
 
         if token_exists:
-            return True
+            return {"authenticated": True, "user": user}
         else:
             return False
 
@@ -233,7 +379,6 @@ class Token(models.Model):
                     return True
 
         else: return False
-
 
 class Activation_Code_Manager:
 
@@ -295,3 +440,13 @@ class Activation_Code_Manager:
         print(self.get_code()['code'] , code)
 
         return self.get_code()['code'] == code
+
+
+def solve_distances(dataframe, reference):
+    print("-------------",reference)
+    f = lambda row: distance.euclidean([row.latitude, row.longitude], reference)
+
+    distances = dataframe.apply(f, axis = 1)
+    
+    return distances
+    
