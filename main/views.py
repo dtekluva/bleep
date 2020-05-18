@@ -591,6 +591,7 @@ def get_closest_lawyers(request):
                     "task_successful": True,
                     "content": {
                         "details": closest_lawyers,
+                        "distance_unit": "km",
                         "user_type": main_user.__class__.__name__,
                     },
                     "auth_keys": {"access_token": "IN HEADERS"

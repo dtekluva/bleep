@@ -9,6 +9,8 @@ import json, datetime, random
 import pandas as pd
 from beeep.settings import BASE_DIR
 from scipy.spatial import distance
+from math import radians, cos, sin, asin, sqrt
+
 
 # from dateutil import parser
 
@@ -457,9 +459,22 @@ class Activation_Code_Manager:
 
 def solve_distances(dataframe, reference):
     # print("-------------",reference)
-    f = lambda row: distance.euclidean([ row.longitude, row.latitude ], reference)
+    f = lambda row: haversine( row.latitude ,row.longitude,  reference[1], reference[0])
 
     distances = dataframe.apply(f, axis = 1)
     
     return distances
     
+def haversine(lat1, lon1, lat2, lon2):
+
+      R = 6372.8  # this is in kilometers.  For Earth radius in miles use 3959.87433 miles
+
+      dLat = radians(lat2 - lat1)
+      dLon = radians(lon2 - lon1)
+      lat1 = radians(lat1)
+      lat2 = radians(lat2)
+
+      a = sin(dLat/2)**2 + cos(lat1)*cos(lat2)*sin(dLon/2)**2
+      c = 2*asin(sqrt(a))
+
+      return R * c
