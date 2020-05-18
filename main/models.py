@@ -83,7 +83,18 @@ class Lawyer(models.Model):
 
         return lawyer_frame.sort_values('distance').to_dict(orient="index")
 
+    def get_details(self):
+        user_data = self.__dict__
+        data = {}
+
+        for key in user_data:
+            if key.startswith("_"):
+                continue
+                
+            data[key] = user_data[key]
         
+        return data
+
     def compressImage(self,uploadedImage):
 
         imageTemporary = Image.open(uploadedImage)
@@ -124,6 +135,8 @@ class Lawyer(models.Model):
         self.longitude = geolocation["longitude"]
         self.latitude = geolocation["latitude"]
         self.save()
+
+        return True
 
 class Buddy(models.Model):
     CHOICES     = [
@@ -277,7 +290,7 @@ class Civilian(models.Model):
         user = User.objects.create(username = phone, first_name = firstname, last_name = lastname, email = email)
         user.set_password(password)
         user.save(0)
-        print(password)
+        # print(password)
 
         civilian = Civilian.objects.create(user = user, firstname = firstname, lastname = lastname, twitter_handle = twitter_handle, email = email, address = address, phone = phone )
 
@@ -365,7 +378,7 @@ class Token(models.Model):
         # user_logged = User.objects.get(username = username)
         user_model = Civilian.objects.filter(user__username = username) or Lawyer.objects.filter(user__username = username)
         user = authenticate(username = username , password = password)
-        print(user, username, username.lower())
+        # print(user, username, username.lower())
 
         if user and (user.username == username): #allows user to login using username
                 # No backend authenticated the credentials
@@ -426,7 +439,7 @@ class Activation_Code_Manager:
         data[self.user.username] = value
         self.write_data(data)
 
-        print("Successfully cached")
+        # print("Successfully cached")
         return {f"cached-{self.user.username}" : True}
 
 
@@ -437,14 +450,14 @@ class Activation_Code_Manager:
         return data
 
     def verify_code(self, code):
-        print(self.get_code()['code'] , code)
+        # print(self.get_code()['code'] , code)
 
         return self.get_code()['code'] == code
 
 
 def solve_distances(dataframe, reference):
-    print("-------------",reference)
-    f = lambda row: distance.euclidean([row.latitude, row.longitude], reference)
+    # print("-------------",reference)
+    f = lambda row: distance.euclidean([ row.longitude, row.latitude ], reference)
 
     distances = dataframe.apply(f, axis = 1)
     

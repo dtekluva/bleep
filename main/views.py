@@ -31,8 +31,9 @@ def update_details(request):
                 user = auth_successful["user"]
 
                 main_user = Civilian.objects.filter(
-                    user=user)[0] or Lawyer.objects.filter(user=user)[0]
-                    
+                    user=user) or Lawyer.objects.filter(user=user)
+                
+                main_user = main_user[0]
                 result = main_user.update_details(data)
 
                 if result["status"]:
@@ -119,8 +120,9 @@ def add_buddy(request):
                 user = auth_successful["user"]
 
                 main_user = Civilian.objects.filter(
-                    user=user)[0] or Lawyer.objects.filter(user=user)[0]
-                    
+                    user=user) or Lawyer.objects.filter(user=user)
+                
+                main_user = main_user[0]
                 result = main_user.add_buddy(data)
 
                 if result:
@@ -207,8 +209,9 @@ def add_location(request):
                 user = auth_successful["user"]
 
                 main_user = Civilian.objects.filter(
-                    user=user)[0] or Lawyer.objects.filter(user=user)[0]
-                    
+                    user=user) or Lawyer.objects.filter(user=user)
+                
+                main_user = main_user[0]
                 result = main_user.add_location(data)
 
                 if result:
@@ -293,9 +296,10 @@ def get_details(request):
                 user = auth_successful["user"]
 
                 main_user = Civilian.objects.filter(
-                    user=user)[0] or Lawyer.objects.filter(user=user)[0]
-                print(main_user.get_token())
+                    user=user) or Lawyer.objects.filter(user=user)
+                # print(main_user.get_token())
 
+                main_user = main_user[0]
                 user_data = main_user.get_details()
 
                 resp = (json.dumps({"response": {
@@ -505,9 +509,10 @@ def get_all_plans(request):
                 user = auth_successful["user"]
 
                 main_user = Civilian.objects.filter(
-                    user=user)[0] or Lawyer.objects.filter(user=user)[0]
-                print(main_user.get_token())
+                    user=user) or Lawyer.objects.filter(user=user)
+                # print(main_user.get_token())
 
+                main_user = main_user[0]
                 plans = Plan.get_all_plans()
 
                 resp = (json.dumps({"response": {
@@ -575,9 +580,10 @@ def get_closest_lawyers(request):
                 user = auth_successful["user"]
 
                 main_user = Civilian.objects.filter(
-                    user=user)[0] or Lawyer.objects.filter(user=user)[0]
-                print(main_user.get_token())
+                    user=user) or Lawyer.objects.filter(user=user)
+                # print(main_user.get_token())
 
+                main_user = main_user[0]
                 closest_lawyers = Lawyer.get_closest(main_user)
 
                 resp = (json.dumps({"response": {
@@ -769,7 +775,7 @@ def get_all_users(request):
     if request.method == 'POST':
 
         data = json.loads(request.body)
-        print(data)
+        # print(data)
 
         access_token = data["auth_keys"]["access_token"]
         email = data.get("email")
@@ -802,7 +808,7 @@ def get_all_forms(request):
         if request.method == 'POST':
 
             data = json.loads(request.body)
-            print(data)
+            # print(data)
 
             access_token = data["auth_keys"]["access_token"]
             email = data.get("email")
