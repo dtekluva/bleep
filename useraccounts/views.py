@@ -118,7 +118,7 @@ def mobile_signin(request):
                                 if user_data["_state"] :
                                         del user_data["_state"]
 
-                                print(user_data)
+                                auth_token = main_user[0].get_token()
 
                                 resp = (json.dumps({"response": {
                                                                 "code": http_codes["Created"],
@@ -128,13 +128,13 @@ def mobile_signin(request):
                                                                         "user_type": main_user.__class__.__name__,
                                                                         "details": user_data
                                                                 },
-                                                                "auth_keys": {"access_token": "in-headers"
+                                                                "auth_keys": {"access_token": auth_token
                                                                 }
                                                                 }
                                                                 })
                                                                 )
 
-                                return CORS(resp).allow_all(auth = main_user[0].get_token(), status_code=201)
+                                return CORS(resp).allow_all(auth = auth_token, status_code=201)
                         
                         else:
 
@@ -305,11 +305,11 @@ def mobile_verify_code(request):
                                 target_account.is_verified = True
                                 Token(user = target_account.user).add_token(request)
                                 target_account.save()
-                                
+                                auth_token = target_account.get_token()
                                 resp = (json.dumps({"response": {"task_successful": is_verified, "code": http_codes["Accepted"],                            "content": {
                                                                 "user": "", "message": "User account activated",
-                                                                "details": target_account.get_details()}, "auth_keys": {"access_token": target_account.get_token()}}}))
-                                return CORS(resp).allow_all(auth=target_account.get_token(), status_code=http_codes["Accepted"]["code"])
+                                                                "details": target_account.get_details()}, "auth_keys": {"access_token": auth_token}}}))
+                                return CORS(resp).allow_all(auth=auth_token, status_code=http_codes["Accepted"]["code"])
                         else:
                                 resp = (json.dumps({"response": {"task_successful": False, "code": http_codes["Not Implemented"],                            "content": {
                                                                 "user": "", "message": "Account details provided do not exist."}, "auth_keys": {"access_token": []}}}))
