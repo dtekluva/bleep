@@ -307,7 +307,8 @@ def mobile_verify_code(request):
                                 target_account.save()
                                 
                                 resp = (json.dumps({"response": {"task_successful": is_verified, "code": http_codes["Accepted"],                            "content": {
-                                                                "user": "", "message": "User account activated"}, "auth_keys": {"access_token": target_account.get_token()}}}))
+                                                                "user": "", "message": "User account activated",
+                                                                "details": target_account.get_details()}, "auth_keys": {"access_token": target_account.get_token()}}}))
                                 return CORS(resp).allow_all(auth=target_account.get_token(), status_code=http_codes["Accepted"]["code"])
                         else:
                                 resp = (json.dumps({"response": {"task_successful": False, "code": http_codes["Not Implemented"],                            "content": {
@@ -315,7 +316,7 @@ def mobile_verify_code(request):
                                 return CORS(resp).allow_all(status_code=http_codes["Not Implemented"]["code"])
 
                                 
-                except :
+                except NameError :
                         resp = (json.dumps({"response": {"task_successful": False, "code": http_codes["Not Implemented"],                            "content": {
                                                         "user": "", "message": "User account not activated( something went wrong"}, "auth_keys": {"access_token": []}}}))
                         return CORS(resp).allow_all(status_code=http_codes["Not Implemented"]["code"])

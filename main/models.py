@@ -264,6 +264,15 @@ class Civilian(models.Model):
             if key.startswith("_"):
                 continue
                 
+            if key == "image":
+
+                try:
+                    data["image"] = user_data[key].url
+                except:
+                    data["image"] = ""
+                    
+                continue
+            
             data[key] = user_data[key]
         
         data["buddies"] = self.get_buddies()
@@ -391,7 +400,23 @@ class Token(models.Model):
                     login(request, user)
                     Token(user = user).add_token(request)
 
-                    return True
+                    return {"success" : True, "message":"Not yet Verified"}
+
+                else:
+                    return {"success" : False, "message":"Not yet Verified"}
+
+        else: return {"success" : False, "message":"Incorrect details"}
+
+    @staticmethod
+    def authenticate_from_verify(user, request):
+
+        if user.is_verified:
+
+            user = User.objects.get(id=user.id)
+            login(request, user)
+            Token(user = user).add_token(request)
+
+            return True
 
         else: return False
 
