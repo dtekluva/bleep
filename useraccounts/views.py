@@ -125,7 +125,7 @@ def mobile_signin(request):
                                                                 "task_successful": True,
                                                                 "content": {
                                                                         "message": f"Authenticated new user",
-                                                                        "user_type": main_user.__class__.__name__,
+                                                                        "user_type": main_user[0].__class__.__name__,
                                                                         "details": user_data
                                                                 },
                                                                 "auth_keys": {"access_token": auth_token
