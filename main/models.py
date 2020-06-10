@@ -9,7 +9,9 @@ import json, datetime, random
 import pandas as pd
 from beeep.settings import BASE_DIR
 from scipy.spatial import distance
+from django.db.models import F, Func, Value, CharField
 from math import radians, cos, sin, asin, sqrt
+from helpers.email import send_verification_mail
 
 
 # from dateutil import parser
@@ -93,6 +95,15 @@ class Lawyer(models.Model):
             if key.startswith("_"):
                 continue
                 
+            if key == "image":
+
+                try:
+                    data["image"] = user_data[key].url
+                except:
+                    data["image"] = ""
+                    
+                continue
+            
             data[key] = user_data[key]
         
         return data
@@ -181,7 +192,9 @@ class Civilian(models.Model):
     longitude      = models.FloatField(blank = True, null = True)
     latitude       = models.FloatField(blank = True, null = True)
     is_verified    = models.BooleanField(default = False)
+    is_beeeping    = models.BooleanField(default = False)
     image          =  models.ImageField(upload_to = 'profile_pics/',blank=False,null=True)
+
 
     def save_image(self, *args, **kwargs):
 
@@ -226,6 +239,8 @@ class Civilian(models.Model):
 
         if email:
             self.email = email
+            self.user.email = email
+            self.user.save()
 
         plan_id = data.get("plan")
         if plan_id:
@@ -315,6 +330,29 @@ class Civilian(models.Model):
 
         return True
 
+    def get_location(self):
+
+        return {
+                    "fname": self.lastname,
+                    "lname": self.firstname,
+                    "lng": self.longitude, 
+                    "lat": self.latitude
+                }
+
+    def has_active_beeep(self):
+        return self.user.beeep_set.filter(is_active = True).exists()
+    
+    def get_all_beeeps(self):
+
+        raw_query =  list(self.user.beeep_set.all().values())
+        
+        for i in range(len(raw_query)):
+            print(raw_query[i]["beeep_start_time"])
+            raw_query[i]["beeep_start_time"] = raw_query[i]["beeep_start_time"].strftime("%m/%d/%Y, %H:%M:%S")
+            raw_query[i]["beeep_end_time"] = raw_query[i]["beeep_end_time"].strftime("%m/%d/%Y, %H:%M:%S")
+
+        
+        return list(raw_query)
 
 class Token(models.Model):
 
@@ -434,6 +472,7 @@ class Activation_Code_Manager:
         code = "".join([str(random.randint(0,9)) for i in range(4)])
         new_code = {"date": datetime.datetime.now().strftime("%d-%m-%Y"), "code":code}
         self.update(new_code)
+        send_verification_mail(code,self.user)
     
     def read_data(self):
 
@@ -481,6 +520,57 @@ class Activation_Code_Manager:
 
         return self.get_code()['code'] == code
 
+class Beeep(models.Model):
+    user       = models.ForeignKey(User, on_delete=models.CASCADE, blank = True, null = True)
+    start_lng  = models.FloatField(default=0)
+    start_lat  = models.FloatField(default=0)
+    end_lng    = models.FloatField(default=0)
+    end_lat    = models.FloatField(default=0)
+    plan_price = models.IntegerField(default=0)
+    beeep_start_time = models.DateTimeField(auto_now_add=True, blank=True)
+    beeep_end_time   = models.DateTimeField(auto_now=True, blank=True)
+    is_active        = models.BooleanField(default = True)
+
+    def __str__(self):
+        return self.user.username
+
+    @staticmethod
+    def handle_beeep(civilian, request):
+
+        data = json.loads(request.body)
+        lat = data.get("latitude")
+        lng = data.get("longitude")
+        action = data.get("action")
+        user_type = data.get("user_type")
+
+        if action == "start":
+            
+
+            if civilian.has_active_beeep():
+                return {"status":True, "message": "Beeep already started"}
+            
+            Beeep(user = civilian.user, start_lng = lng, start_lat = lat).save()
+
+            return {"status":True, "message": "New Beeep started"}
+
+        else:
+
+            old_beeeps = civilian.user.beeep_set.filter(is_active = "True")
+            
+            if old_beeeps.exists():
+
+                # old_beeeps.update(is_active = "False")
+                # print(last_beeep)
+
+                last_beeep = old_beeeps.last()
+                last_beeep.is_active = False
+                last_beeep.beeep_end_time = datetime.datetime.now()
+                last_beeep.save()
+
+                return {"status":True, "message": "Beeep Successfully Ended Weldone"}
+
+            else:
+                return {"status":True, "message": "Sorry No Beeep To Successfully End"}
 
 def solve_distances(dataframe, reference):
     # print("-------------",reference)

@@ -10,7 +10,6 @@ import json
 
 # Create your views here.
 
-
 def index(request):
     return HttpResponse(json.dumps({"response": "success", "message": "Sorry no content here. Maybe download the app."}))
 
@@ -638,10 +637,232 @@ def get_closest_lawyers(request):
 
         return CORS(resp).allow_all(status_code=405)
 
+@csrf_exempt
+def get_user_location(request, phone):
+
+    if request.method == 'GET':
+
+        try:
+            auth_successful = Token.verify_token(request)
+            
+
+            if auth_successful:
+
+                user = auth_successful["user"]
+
+                main_user = Civilian.objects.filter(
+                    user=user) or Lawyer.objects.filter(user=user)
+                # print(main_user.get_token())
+
+                main_user = main_user[0]
+                user_data = main_user.get_details()
+
+                target_civilian_location = Civilian.objects.get(phone = phone).get_location()
 
 
+                resp = (json.dumps({"response": {
+                    "code": http_codes["Created"],
+                    "task_successful": True,
+                    "content": {
+                        "details": {
+                            "target_user_location":target_civilian_location
+                            },
+                        "user_type": main_user.__class__.__name__,
+                    },
+                    "auth_keys": {"access_token": main_user.get_token()
+                                }
+                }
+                })
+                )
+
+                return CORS(resp).allow_all(auth=main_user.get_token(), status_code=201)
 
 
+            else:
+
+                resp = (json.dumps({"response": {
+                    "code": http_codes["Unauthorized"],
+                    "task_successful": False,
+                    "content": {
+                        "message": "Username or Password might be wrong..!!"
+                    },
+                    "auth_keys": {"access_token": ""}
+                }
+                })
+                )
+
+                return CORS(resp).allow_all(status_code=401)
+
+        except SyntaxError:
+            resp = HttpResponse(json.dumps({"response": {
+                "code": http_codes["Unauthorized"],
+                "task_successful": False,
+                "content": {
+                    "user": "",
+                    "message": f"Authentication credentials mismatch"
+                },
+                "auth_keys": {"access_token": ""}
+            }
+            }))
+
+            return CORS(resp).allow_all(status_code=401)
+
+    else:
+        resp = (json.dumps({"response": {"task_successful": False, "code": http_codes["Method Not Allowed"],                    "content": {
+                            "user": "", "message": "bad request method"}, "auth_keys": {"access_token": ""}}}))
+
+        return CORS(resp).allow_all(status_code=405)
+
+
+def get_all_beeps(request):
+
+    if request.method == 'GET':
+
+        try:
+            auth_successful = Token.verify_token(request)
+            
+
+            if auth_successful:
+
+                user = auth_successful["user"]
+
+                main_user = Civilian.objects.filter(
+                    user=user) or Lawyer.objects.filter(user=user)
+                # print(main_user.get_token())
+
+                main_user = main_user[0]
+                user_data = main_user.get_details()
+
+                target_civilian_beeeps = main_user.get_all_beeeps()
+
+
+                resp = (json.dumps({"response": {
+                    "code": http_codes["Created"],
+                    "task_successful": True,
+                    "content": {
+                        "details": {
+                            "target_user_beeeps":target_civilian_beeeps
+                            },
+                        "user_type": main_user.__class__.__name__,
+                    },
+                    "auth_keys": {"access_token": main_user.get_token()
+                                }
+                }
+                })
+                )
+
+                return CORS(resp).allow_all(auth=main_user.get_token(), status_code=201)
+
+
+            else:
+
+                resp = (json.dumps({"response": {
+                    "code": http_codes["Unauthorized"],
+                    "task_successful": False,
+                    "content": {
+                        "message": "Username or Password might be wrong..!!"
+                    },
+                    "auth_keys": {"access_token": ""}
+                }
+                })
+                )
+
+                return CORS(resp).allow_all(status_code=401)
+
+        except SyntaxError:
+            resp = HttpResponse(json.dumps({"response": {
+                "code": http_codes["Unauthorized"],
+                "task_successful": False,
+                "content": {
+                    "user": "",
+                    "message": f"Authentication credentials mismatch"
+                },
+                "auth_keys": {"access_token": ""}
+            }
+            }))
+
+            return CORS(resp).allow_all(status_code=401)
+
+    else:
+        resp = (json.dumps({"response": {"task_successful": False, "code": http_codes["Method Not Allowed"],                    "content": {
+                            "user": "", "message": "bad request method"}, "auth_keys": {"access_token": ""}}}))
+
+        return CORS(resp).allow_all(status_code=405)
+
+    print(Civilian.objects.all()[0].get_all_beeeps())
+
+
+@csrf_exempt
+def start_or_stop_beeep(request):
+
+    if request.method == 'POST':
+
+        auth_successful = Token.verify_token(request)
+        
+        try:
+
+            if auth_successful:
+
+                user = auth_successful["user"]
+
+                main_user = Civilian.objects.filter(
+                    user=user) or Lawyer.objects.filter(user=user)
+
+                main_user = main_user[0]
+
+                beeep_start_response = Beeep.handle_beeep(main_user, request)
+
+                
+                resp = (json.dumps({"response": {
+                    "code": http_codes["Created"],
+                    "task_successful": True,
+                    "content": {
+                        "message": f"Authenticated new user",
+                        "user_type": "main_user.__class__.__name__",
+                        "details": beeep_start_response
+                    },
+                    "auth_keys": {"access_token": main_user.get_token()
+                                  }
+                }
+                })
+                )
+
+                return CORS(resp).allow_all(auth=main_user.get_token(), status_code=201)
+
+            else:
+
+                resp = (json.dumps({"response": {
+                    "code": http_codes["Unauthorized"],
+                    "task_successful": False,
+                    "content": {
+                        "message": "Username or Password might be wrong..!!"
+                    },
+                    "auth_keys": {"access_token": ""}
+                }
+                })
+                )
+
+                return CORS(resp).allow_all(status_code=401)
+
+        except SyntaxError:
+            resp = HttpResponse(json.dumps({"response": {
+                "code": http_codes["Unauthorized"],
+                "task_successful": False,
+                "content": {
+                    "user": "",
+                    "message": f"Authentication credentials mismatch"
+                },
+                "auth_keys": {"access_token": ""}
+            }
+            }))
+
+            return CORS(resp).allow_all(status_code=401)
+
+    else:
+        resp = (json.dumps({"response": {"task_successful": False, "code": http_codes["Method Not Allowed"],                    "content": {
+                            "user": "", "message": "bad request method"}, "auth_keys": {"access_token": ""}}}))
+
+        return CORS(resp).allow_all(status_code=405)
 
 
 

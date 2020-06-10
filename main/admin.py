@@ -19,9 +19,13 @@ class PlanAdmin(admin.ModelAdmin):
 class TokenAdmin(admin.ModelAdmin):
     list_display = ('token','user', 'is_active', 'device_id')
 
+class BeeepAdmin(admin.ModelAdmin):
+    list_display = ('start_lng',)
+
 admin.site.register(Civilian, CivilianAdmin)
 admin.site.register(Lawyer, LawyerAdmin)
 admin.site.register(Buddy, BuddyAdmin)
 admin.site.register(Subscription, SubscriptionAdmin)
 admin.site.register(Plan, PlanAdmin)
 admin.site.register(Token, TokenAdmin)
+admin.site.register(Beeep, BeeepAdmin)
