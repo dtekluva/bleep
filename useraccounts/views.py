@@ -112,7 +112,7 @@ def mobile_signin(request):
                         user = Civilian.objects.filter(user__username = phone) or Lawyer.objects.filter(user__username = phone)
                         main_user = Civilian.objects.filter(user__username = phone) or Lawyer.objects.filter(user__username = phone)
 
-                        if auth_successful:
+                        if auth_successful.get("success"):
 
                                 user_data = user[0].__dict__
                                 if user_data["_state"] :
