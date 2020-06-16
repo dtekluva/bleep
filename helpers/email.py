@@ -16,4 +16,4 @@ def send_verification_mail(code, to_mail):
     from_email = 'BEEEP VERIFICATION  <alerts@beeep.xyz>' 
     to = to_mail
 
-    mail.send_mail(subject, plain_message, from_email, [to], html_message=html_message)
+    mail.send_mail(subject, plain_message, from_email, [to], html_message=html_message, fail_silently=True)
