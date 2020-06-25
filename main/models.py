@@ -459,7 +459,7 @@ class Token(models.Model):
                     login(request, user)
                     Token(user = user).add_token(request)
 
-                    return {"success" : True, "message":"Not yet Verified"}
+                    return {"success" : True, "message":"Verified"}
 
                 else:
                     return {"success" : False, "message":"Not yet Verified"}
