@@ -132,7 +132,7 @@ def add_buddy(request):
                         "content": {
                             "message": "Added",
                             "user_type": "",
-                            "details": result["get_details"]
+                            "details": result["details"]
                         },
                         "auth_keys": {"access_token": main_user.get_token()
                                     }
