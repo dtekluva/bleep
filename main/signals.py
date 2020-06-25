@@ -16,7 +16,7 @@ def send_verification_message(sender, **kwargs):
         code = verifier.get_code()
         print(code)
         print("------------------------------sending code..!!!---------------------------------")
-        send_verification_mail(code.get('code', False), user.email)
+        # send_verification_mail(code.get('code', False), user.email)
         print("------------------------------Code sent..!!!---------------------------------")
 
 post_save.connect(send_verification_message, sender = User)
