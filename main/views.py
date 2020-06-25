@@ -124,7 +124,7 @@ def add_buddy(request):
                 main_user = main_user[0]
                 result = main_user.add_buddy(data)
 
-                if result.is_added:
+                if result["is_added"]:
 
                     resp = (json.dumps({"response": {
                         "code": http_codes["Created"],
