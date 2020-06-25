@@ -178,6 +178,27 @@ class Buddy(models.Model):
     class Meta:
         verbose_name_plural = "Buddies"
 
+    def get_details(self):
+        user_data = self.__dict__
+        data = {}
+
+        for key in user_data:
+            if key.startswith("_"):
+                continue
+                
+            if key == "image":
+
+                try:
+                    data["image"] = user_data[key].url
+                except:
+                    data["image"] = ""
+                    
+                continue
+            
+            data[key] = user_data[key]
+        
+        return data
+
 class Civilian(models.Model):
     user           = models.OneToOneField(User, on_delete=models.CASCADE)
     lawyer         = models.ManyToManyField(Lawyer, blank = True)
@@ -258,7 +279,7 @@ class Civilian(models.Model):
         return response
 
     def add_buddy(self, data):
-
+        
         # allowed_buddies = self.plan.num_of_buddies
         firstname = data.get("firstname", "")
         lastname = data.get("lastname", "")
@@ -269,7 +290,7 @@ class Civilian(models.Model):
 
         new_buddy.save()
 
-        return True
+        return { "is_added": True, "details" : new_buddy.get_details()}
 
     def get_details(self):
         user_data = self.__dict__

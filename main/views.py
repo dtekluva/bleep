@@ -43,7 +43,7 @@ def update_details(request):
                         "content": {
                             "message": result["message"],
                             "user_type": "main_user.__class__.__name__",
-                            "details": "user_data"
+                            "details": main_user.get_details()
                         },
                         "auth_keys": {"access_token": main_user.get_token()
                                     }
@@ -124,15 +124,15 @@ def add_buddy(request):
                 main_user = main_user[0]
                 result = main_user.add_buddy(data)
 
-                if result:
+                if result.is_added:
 
                     resp = (json.dumps({"response": {
                         "code": http_codes["Created"],
                         "task_successful": True,
                         "content": {
                             "message": "Added",
-                            "user_type": "main_user.__class__.__name__",
-                            "details": "user_data"
+                            "user_type": "",
+                            "details": result.get_details()
                         },
                         "auth_keys": {"access_token": main_user.get_token()
                                     }
