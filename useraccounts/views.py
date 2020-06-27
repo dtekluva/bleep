@@ -120,7 +120,7 @@ def mobile_signin(request):
                                                                 "content": {
                                                                         "message": f"Authenticated new user",
                                                                         "user_type": main_user[0].__class__.__name__,
-                                                                        "details": main_user.get_details()
+                                                                        "details": main_user[0].get_details()
                                                                 },
                                                                 "auth_keys": {"access_token": auth_token
                                                                 }
