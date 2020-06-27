@@ -25,8 +25,6 @@ def login_view(request):
 
                         try:
                                 #GET CORRESPONDING USERNAME FROM EMAIL POSTED
-                                # username = User.objects.get(email = email).username
-                                # user = User.objects.get(username=username)
                                 user = authenticate(username = username.lower(), password = password)
 
                                 if (user.username == username): #allows user to login using username
@@ -114,10 +112,6 @@ def mobile_signin(request):
 
                         if auth_successful.get("success"):
 
-                                user_data = user[0].__dict__
-                                if user_data["_state"] :
-                                        del user_data["_state"]
-
                                 auth_token = main_user[0].get_token()
 
                                 resp = (json.dumps({"response": {
@@ -126,7 +120,7 @@ def mobile_signin(request):
                                                                 "content": {
                                                                         "message": f"Authenticated new user",
                                                                         "user_type": main_user[0].__class__.__name__,
-                                                                        "details": user_data
+                                                                        "details": main_user.get_details()
                                                                 },
                                                                 "auth_keys": {"access_token": auth_token
                                                                 }
@@ -135,6 +129,21 @@ def mobile_signin(request):
                                                                 )
 
                                 return CORS(resp).allow_all(auth = auth_token, status_code=201)
+                        
+                        elif auth_successful.get("is_not_verified"):
+
+                                resp = (json.dumps({"response": {
+                                                                "code": http_codes["Forbidden"],
+                                                                "task_successful": False,
+                                                                "content": {
+                                                                        "message": f"{auth_successful.get('message')}. Or Username or Password might be wrong..!!"
+                                                                },
+                                                                "auth_keys": {"access_token": ""}
+                                                                }
+                                                                })
+                                                                                )
+                        
+                                return CORS(resp).allow_all(status_code=403)
                         
                         else:
 
@@ -263,9 +272,6 @@ def mobile_register_lawyer(request):
 
 @csrf_exempt
 def mobile_verify_code(request):
-        # print(request.META.get("COMPUTERNAME", ""))
-        # print(request.META.get("HTTP_USER_AGENT", ""))
-        # print(request.META)
         
         if request.method == 'POST':
                 

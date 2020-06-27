@@ -445,10 +445,9 @@ class Token(models.Model):
 
     @staticmethod
     def authenticate(username, password, request):
-        # user_logged = User.objects.get(username = username)
+
         user_model = Civilian.objects.filter(user__username = username) or Lawyer.objects.filter(user__username = username)
         user = authenticate(username = username , password = password)
-        # print(user, username, username.lower())
 
         if user and (user.username == username): #allows user to login using username
                 # No backend authenticated the credentials
@@ -459,12 +458,11 @@ class Token(models.Model):
                     login(request, user)
                     Token(user = user).add_token(request)
 
-                    return {"success" : True, "message":"Verified"}
+                    return {"success" : True, "message":"Verified", "is_not_verified": False}
 
-                else:
-                    return {"success" : False, "message":"Not yet Verified"}
+                else: return {"success" : False, "message":"Not yet Verified", "is_not_verified": True}
 
-        else: return {"success" : False, "message":"Incorrect details"}
+        else: return {"success" : False, "message":"Incorrect details", "is_not_verified": False}
 
     @staticmethod
     def authenticate_from_verify(user, request):
