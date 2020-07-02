@@ -85,7 +85,9 @@ class Lawyer(models.Model):
         distances = solve_distances(lawyer_frame, [user.longitude, user.latitude])
         lawyer_frame["distance"] = distances
 
-        return lawyer_frame.sort_values('distance').to_dict(orient="index")
+        closest_lawyers = [lawyer_frame.sort_values('distance').to_dict(orient="index")[key] for key in lawyer_frame.sort_values('distance').to_dict(orient="index")]
+
+        return closest_lawyers
 
     def get_details(self):
         user_data = self.__dict__
