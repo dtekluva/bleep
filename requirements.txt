@@ -1,6 +1,13 @@
 asgiref==3.2.3
 Django==3.0.2
+django-cors-headers==3.4.0
+gunicorn==20.0.4
+numpy==1.19.0
+pandas==1.0.5
+Pillow==7.2.0
+python-dateutil==2.8.1
 pytz==2019.3
+scipy==1.5.0
+six==1.15.0
 sqlparse==0.3.0
 whitenoise==5.0.1
-gunicorn==20.0.4
