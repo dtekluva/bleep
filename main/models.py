@@ -583,10 +583,12 @@ class Beeep(models.Model):
 
                 last_beeep = old_beeeps.last()
                 last_beeep.is_active = False
+                last_beeep.end_lat = lat
+                last_beeep.end_lng = lng
                 last_beeep.beeep_end_time = datetime.datetime.now()
                 last_beeep.save()
 
-                return {"status":True, "message": "Beeep Successfully Ended Weldone"}
+                return {"status":True, "message": "Beeep Successfully Ended Welldone"}
 
             else:
                 return {"status":True, "message": "Sorry No Beeep To Successfully End"}

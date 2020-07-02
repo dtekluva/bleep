@@ -285,6 +285,7 @@ def add_location(request):
 def get_details(request):
 
     if request.method == 'GET':
+        print(request.META)
 
         try:
             auth_successful = Token.verify_token(request)
