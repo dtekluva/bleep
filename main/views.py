@@ -23,7 +23,7 @@ def update_details(request):
 
         try:
             auth_successful = Token.verify_token(request)
-            
+            print(auth_successful)
 
             if auth_successful:
 

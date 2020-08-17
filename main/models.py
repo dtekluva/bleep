@@ -75,6 +75,57 @@ class Lawyer(models.Model):
         self.uploadedImage = self.compressImage(self.uploadedImage)
         super(Lawyer, self).save(*args, **kwargs)
 
+    def update_details(self, data):
+        
+        response = {"status":True, "message":""}
+        phone = data.get("phone")
+        if phone:
+            self.phone = phone
+            self.user.username = phone
+            self.user.save()
+
+        password = data.get("password")
+        if password:
+            self.user.set_password(password)
+            self.user.save()
+            
+        firstname = data.get("firstname")
+        if firstname:
+            self.firstname = firstname
+
+        lastname = data.get("lastname")
+        if lastname:
+            self.lastname = lastname
+
+        twitter_handle = data.get("twitter_handle")
+        if twitter_handle:
+            self.twitter_handle = twitter_handle
+
+        address = data.get("address")
+        if address:
+            self.address = address
+        email = data.get("email")
+
+        if email:
+            self.email = email
+            self.user.email = email
+            self.user.save()
+
+        # plan_id = data.get("plan")
+        # if plan_id:
+        #     plan = Plan.objects.filter(id = plan_id)
+
+        #     if plan and plan[0].type_of_user == "lawyer":
+        #         self.plan = plan[0]
+        #         self.save()
+        #     else:
+        #         response["status"] = False
+        #         return response
+        
+        self.save()
+
+        return response
+
     @staticmethod
     def get_closest(user):
 
@@ -433,10 +484,12 @@ class Token(models.Model):
 
         try:
             user = User.objects.get(username = user_id)
+            print(user)
         except:
             return False
 
         token = request.META.get("HTTP_AUTHORIZATION")
+        print(user.token_set.filter(token = token))
         
         token_exists = user.token_set.filter(token = token).exists()
 
@@ -468,7 +521,7 @@ class Token(models.Model):
 
     @staticmethod
     def authenticate_from_verify(user, request):
-
+ 
         if user.is_verified:
 
             user = User.objects.get(id=user.id)
